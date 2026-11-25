@@ -1,97 +1,52 @@
-# Instagram Stories Viewer
+# Instagram Viewer
 
-A mobile-friendly Instagram public-content viewer. The Cloudflare Worker serves the frontend and API gateway. Instagram data is fetched by a separate Python service using the open-source **Instaloader** library.
+A mobile-friendly Instagram public-content viewer powered by a Cloudflare Worker and a separate Python service using the open-source Instaloader library.
 
 ## Architecture
 
-```text
-iPhone / browser
-      |
-      v
-Cloudflare Worker (website + API gateway + rate limiting)
-      |
-      | HTTPS + private Bearer token
-      v
-Python Instaloader service
-      |
-      v
-Instagram public endpoints
-```
+- `public/index.html`: mobile-first website UI.
+- `worker.js`: API gateway, request validation, rate limiting, and backend authentication.
+- `instaloader-service/app.py`: Python/FastAPI bridge to Instaloader.
+- `wrangler.toml`: existing Cloudflare Worker name, static asset binding, and Durable Object rate limiter.
+- `render.yaml`: Render Docker service definition.
 
-Instaloader is free/open-source software and does not charge per API credit. This project has no paid scraping API fallback, no automatic credit purchase, and no paid-provider failover.
+## Existing environment variables
 
-## Important distinction: free software vs free hosting
+This code update does not create, rename, delete, or change any deployment variables or secrets.
 
-Instaloader itself is free. A Python process must still run somewhere. Cloudflare Workers cannot directly execute the Python Instaloader package. You can run the Python bridge on a computer or Raspberry Pi you control, or deploy it to a Python/Docker host. A free hosting tier may sleep, restart, impose limits, or change its terms; zero-cost always-on hosting is not guaranteed. Do not enable paid instances or add a payment method if strict zero spend is required.
+The Worker continues to read:
+- `INSTALOADER_SERVICE_URL` (HTTPS base URL, plain-text variable)
+- `INSTALOADER_SERVICE_TOKEN` (encrypted secret)
 
-## Deploy the Python service
+The Python service continues to read:
+- `INSTALOADER_SERVICE_TOKEN` (same secret value as the Worker)
+- Optional `INSTALOADER_LOGIN_USER`
+- Optional `INSTALOADER_SESSION_FILE`
 
-The backend source is in [instaloader-service](./instaloader-service).
+Keep existing values unchanged. Never commit secrets, Instagram passwords, or session files to GitHub.
 
-1. Deploy the Dockerfile on a Python/Docker host, or run it on your own computer.
-2. Set `INSTALOADER_SERVICE_TOKEN` to a long random secret.
-3. Start the service on port 7860.
-4. Confirm its `/health` endpoint reports `ok: true`.
-5. Keep the service URL on HTTPS when it is reachable from Cloudflare.
+## Supported features
 
-Run locally:
+- Public profile information and recent posts
+- Profile posts and Reels
+- Stories (requires a valid Instagram session)
+- Highlights list (requires a valid Instagram session)
+- Hashtag posts (requires a valid Instagram session)
+- Post details
+- Comments and liker lists where Instagram permits access (login may be required)
 
-```bash
-cd instaloader-service
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-export INSTALOADER_SERVICE_TOKEN='replace-with-a-long-random-secret'
-uvicorn app:app --host 0.0.0.0 --port 7860
-```
+The backend does not provide account search, a global trending Reels feed, hashtag autocomplete, or music recognition. The UI does not present these unsupported operations as working features.
 
-## Connect the Cloudflare Worker
+## Deploy
 
-Open Cloudflare Dashboard → Workers & Pages → instagram-stories-viewer → Settings → Variables and Secrets.
+### Python service
 
-Add:
-- Plain-text variable `INSTALOADER_SERVICE_URL`: your Python service HTTPS base URL.
-- Encrypted Secret `INSTALOADER_SERVICE_TOKEN`: exactly the same random token used by the Python service.
+Deploy `instaloader-service/Dockerfile` to the existing Render service. The health endpoint is `/health`; the authenticated token check is `/v1/health`.
 
-The Worker checks the Python service's `/health` endpoint through `/api/status`. This check does not make an Instagram request.
+### Cloudflare Worker
 
-Remove old `INSCRAPE_API_KEY` and `SOCIALFETCH_API_KEY` secrets after confirming the Instaloader connection. They are no longer read by this Worker.
+Deploy the existing Worker using `wrangler.toml`. Preserve the existing Worker name and Durable Object binding. The Worker health endpoint is `/api/health`; connection and token verification are reported by `/api/status`.
 
-## Optional Instagram login session
+## Limits and privacy
 
-Public profiles and posts may work without login. Stories, Highlights, hashtag browsing, comments, and liker lists can require an authenticated Instagram session. If you choose to enable those features:
-
-- Create a session file using Instaloader on a trusted device.
-- Configure `INSTALOADER_LOGIN_USER` and `INSTALOADER_SESSION_FILE` on the Python service.
-- Keep the session file private; it is equivalent to an account credential.
-- Do not commit session files or passwords to GitHub.
-- The bridge never accepts Instagram passwords over its HTTP API.
-
-Private profiles are only accessible if the logged-in account is authorized to view them. This project does not bypass privacy controls.
-
-## Supported service routes
-
-- Public profile and recent posts
-- Public profile posts
-- Reels-style video posts from the profile media stream
-- Stories (session may be required)
-- Highlights list (session may be required)
-- Hashtag posts (session may be required)
-- Post comments (session may be required)
-- Post metadata and media URLs
-- Post likers (session may be required)
-
-Not implemented by Instaloader: Instagram account search, global trending Reels, hashtag autocomplete, and ID-only Highlight item lookup. These endpoints return an explicit unsupported response; the Worker does not call another provider.
-
-## Rate limits and reliability
-
-Instaloader includes its own rate controller. Do not run several instances against the same Instagram account/IP, repeatedly restart the service, or try to evade Instagram's rate limits. Cloud/VPN/public proxy IPs may receive stricter anonymous limits. A 429 response means stop and wait; it does not trigger another provider.
-
-The Worker also applies per-client request throttling. No proxy rotation, CAPTCHA bypass, or rate-limit evasion is implemented.
-
-## Documentation
-
-- Instaloader source: https://github.com/instaloader/instaloader
-- Official usage: https://instaloader.github.io/basic-usage.html
-- Python module: https://instaloader.github.io/as-module.html
-- Rate-limit troubleshooting: https://instaloader.github.io/troubleshooting.html
+Instaloader is free/open-source software; hosting may not be free or always-on. Instagram can require login, restrict requests, or return incomplete data. A 429 response means stop and wait. This project does not bypass private-account permissions, CAPTCHA, or Instagram rate limits, and has no paid API fallback or automatic proxy rotation.
