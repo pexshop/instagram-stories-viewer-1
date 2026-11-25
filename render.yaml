@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: pexshop-instaloader
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./instaloader-service/Dockerfile
+    dockerContext: ./instaloader-service
+    healthCheckPath: /health
+    envVars:
+      - key: INSTALOADER_SERVICE_TOKEN
+        generateValue: true

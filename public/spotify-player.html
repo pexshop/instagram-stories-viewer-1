@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d0b">
+<title>Music — Spotify 风格音乐播放器</title>
+<style>
+:root{color-scheme:dark;--bg:#090d0b;--panel:#121a16;--panel2:#1a251f;--muted:#a7b3aa;--green:#1ed760;--line:#ffffff12;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#17251d 0,#0b110e 320px,var(--bg) 720px);color:#f5f7f5;min-height:100vh;padding-bottom:180px}
+button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}.app{max-width:1440px;margin:auto;padding:18px;display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px}
+.sidebar{position:sticky;top:18px;height:calc(100vh - 36px);min-height:570px;display:flex;flex-direction:column;gap:12px}
+.panel{background:#101713eF;border:1px solid var(--line);border-radius:15px;padding:17px}
+.logo{font-weight:900;font-size:21px;letter-spacing:-.7px;display:flex;align-items:center;gap:9px;padding:5px 3px 18px}.logoMark{width:30px;height:30px;border-radius:50%;background:var(--green);color:#07120a;display:grid;place-items:center;font-size:18px}
+.nav{display:grid;gap:7px}.nav button,.libraryHead button{background:transparent;text-align:left;padding:11px 10px;border-radius:9px;color:#c3cec6;font-weight:700}.nav button.active,.nav button:hover{background:#ffffff12;color:#fff}.nav span{display:inline-block;width:28px;font-size:17px}
+.libraryHead{display:flex;align-items:center;justify-content:space-between;color:#c7d0ca;font-weight:800;margin-bottom:10px}.libraryHead button{padding:5px 9px;font-size:18px}
+.libraryList{display:grid;gap:5px;max-height:48vh;overflow:auto}.libItem{display:flex;gap:10px;align-items:center;background:transparent;text-align:left;padding:8px;border-radius:9px;color:#e8eee9;min-width:0}.libItem:hover{background:#ffffff0e}.cover{width:43px;height:43px;border-radius:7px;background:linear-gradient(135deg,#315b42,#14251a);display:grid;place-items:center;flex:none;font-size:19px}.libMeta{min-width:0}.libMeta b,.libMeta small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.libMeta b{font-size:13px}.libMeta small{font-size:11px;color:var(--muted);margin-top:4px}
+.sidebarFoot{margin-top:auto;color:#77847b;font-size:11px;line-height:1.6;padding:8px}
+.content{min-width:0}.topbar{display:flex;align-items:center;gap:12px;margin-bottom:18px}.history{display:flex;gap:7px}.circleBtn{width:34px;height:34px;border-radius:50%;background:#080c0a99;color:#dfe7e1;font-size:18px}.search{flex:1;max-width:540px;position:relative}.search input{width:100%;border:1px solid #ffffff20;border-radius:30px;background:#fff;color:#111;padding:13px 18px 13px 43px;outline:none}.search:before{content:"⌕";position:absolute;left:16px;top:6px;color:#222;font-size:25px}.search input:focus{box-shadow:0 0 0 2px var(--green)}
+.topActions{margin-left:auto;display:flex;gap:8px}.pill{border-radius:30px;padding:9px 14px;background:#ffffff12;font-size:12px;font-weight:800}.pill.green{background:var(--green);color:#06140a}
+.hero{border-radius:18px;padding:25px;background:linear-gradient(110deg,#244b32,#172b20 60%,#101913);display:flex;justify-content:space-between;align-items:end;gap:18px;min-height:205px;margin-bottom:25px}.eyebrow{font-size:11px;font-weight:900;letter-spacing:1.4px;color:#d2e5d6}.hero h1{font-size:clamp(28px,5vw,48px);line-height:1.05;margin:10px 0}.hero p{color:#d2ddd5;font-size:13px;max-width:560px;line-height:1.6;margin:0}.heroArt{font-size:88px;opacity:.85;filter:drop-shadow(0 10px 25px #0007)}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.sectionHead h2{font-size:20px;margin:0}.sectionHead button{background:transparent;color:#b8c4bc;font-size:12px}
+.quickGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.quick{display:flex;align-items:center;gap:12px;background:#ffffff12;border-radius:9px;overflow:hidden;min-width:0;cursor:pointer}.quick:hover{background:#ffffff20}.quick .cover{width:60px;height:60px;border-radius:0;font-size:22px}.quick b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}.musicCard{background:#ffffff08;border-radius:12px;padding:13px;min-width:0;cursor:pointer;transition:.15s}.musicCard:hover{background:#ffffff14}.art{aspect-ratio:1;border-radius:9px;background:linear-gradient(135deg,#385e48,#14251b);display:grid;place-items:center;font-size:45px;margin-bottom:12px;position:relative}.musicCard b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.musicCard small{display:block;color:var(--muted);font-size:11px;margin-top:6px;line-height:1.45}
+.view{display:none}.view.active{display:block}.viewTitle{font-size:30px;margin:8px 0 5px}.sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+.actionRow{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0}.action{padding:10px 14px;border-radius:24px;background:#ffffff13;font-weight:800;font-size:12px}.action.primary{background:var(--green);color:#06140a}
+.trackList{display:grid;gap:4px}.track{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px;border-radius:8px}.track:hover{background:#ffffff10}.trackNum{color:#9aa69e;text-align:center;font-size:12px}.trackTitle{min-width:0}.trackTitle b,.trackTitle small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.trackTitle b{font-size:13px}.trackTitle small{font-size:11px;color:var(--muted);margin-top:3px}.trackActions{display:flex;gap:5px}.trackActions button{background:transparent;color:#c4d0c7;padding:7px;font-size:15px}
+.empty{border:1px dashed #ffffff2a;border-radius:14px;padding:30px 18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
+.inputRow{display:flex;gap:8px;max-width:700px}.inputRow input{flex:1;min-width:0;background:#ffffff12;border:1px solid #ffffff22;color:white;border-radius:9px;padding:12px}.hint{font-size:11px;color:#829087;line-height:1.6;margin-top:10px}
+.player{position:fixed;z-index:30;left:0;right:0;bottom:0;background:#101713f5;border-top:1px solid #ffffff1b;backdrop-filter:blur(20px);padding:9px max(14px,calc((100vw - 1400px)/2));box-shadow:0 -12px 45px #0005}
+.playerTop{display:grid;grid-template-columns:minmax(130px,1fr) minmax(200px,1.2fr) minmax(100px,1fr);gap:15px;align-items:center}
+.now{display:flex;align-items:center;gap:10px;min-width:0}.now .cover{width:48px;height:48px}.nowText{min-width:0}.nowText b,.nowText small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowText b{font-size:12px}.nowText small{font-size:10px;color:var(--muted);margin-top:4px}
+.playerControls{text-align:center}.controls{display:flex;justify-content:center;align-items:center;gap:13px}.controls button{background:transparent;color:#b7c2ba;font-size:17px;padding:4px}.controls .play{background:var(--green);color:#06140a;width:34px;height:34px;border-radius:50%;font-size:16px}.progress{display:flex;align-items:center;gap:8px;color:#93a097;font-size:9px;margin-top:5px}.bar{height:4px;border-radius:5px;background:#ffffff30;flex:1;overflow:hidden}.bar i{display:block;width:0;height:100%;background:var(--green)}
+.playerRight{display:flex;justify-content:flex-end;gap:8px}.playerRight button{background:transparent;color:#b7c2ba;font-size:17px;padding:5px}.embedWrap{max-width:800px;margin:8px auto 0;display:none}.embedWrap.open{display:block}.embedWrap iframe{width:100%;height:152px;border:0;border-radius:10px;background:#000}
+.toast{position:fixed;z-index:60;left:50%;bottom:175px;transform:translateX(-50%);background:#e8f5eb;color:#102016;padding:10px 15px;border-radius:25px;font-size:12px;font-weight:700;display:none;max-width:90%;text-align:center}
+@media(max-width:850px){.app{grid-template-columns:1fr;padding:12px}.sidebar{position:static;height:auto;min-height:0}.sidebar .panel:first-of-type{padding:10px 13px}.logo{padding:3px 3px 10px}.nav{grid-template-columns:repeat(3,1fr)}.nav button{text-align:center;padding:9px 4px;font-size:11px}.nav span{display:block;width:auto;font-size:17px}.libraryPanel{display:none}.sidebarFoot{display:none}.hero{min-height:160px;padding:19px}.heroArt{font-size:65px}.quickGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.player{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}.playerTop{grid-template-columns:minmax(0,1fr) auto;gap:7px}.playerControls{grid-column:2;grid-row:1}.playerRight{display:none}.progress{display:none}.embedWrap{margin-top:6px}}
+@media(max-width:480px){.topbar{flex-wrap:wrap}.topActions{display:none}.search{max-width:none}.heroArt{font-size:48px}.hero{align-items:center}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.musicCard{padding:9px}.sectionHead h2{font-size:18px}.playerTop{grid-template-columns:minmax(0,1fr) auto}.now .cover{width:40px;height:40px}.controls{gap:8px}.quick .cover{width:48px;height:52px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+ <div class="panel">
+  <div class="logo"><span class="logoMark">≋</span> music space</div>
+  <nav class="nav">
+   <button class="active" data-view="home"><span>⌂</span>首页</button>
+   <button data-view="libraryView"><span>▤</span>音乐库</button>
+  </nav>
+ </div>
+ <div class="panel libraryPanel">
+  <div class="libraryHead">你的音乐库 <button id="newPlaylist" title="新建歌单">＋</button></div>
+  <div class="libraryList" id="sideLibrary"></div>
+ </div>
+ <div class="sidebarFoot">使用 Spotify 官方嵌入播放器。播放权限、广告和曲目可用性由 Spotify 决定。</div>
+</aside>
+<main class="content">
+ <div class="topbar">
+  <div class="history"><button class="circleBtn" id="backBtn">‹</button><button class="circleBtn" id="forwardBtn">›</button></div>
+  <div class="topActions"><button class="pill" id="openSpotify">打开 Spotify</button><button class="pill green" id="pasteLink">添加歌曲链接</button></div>
+ </div>
+ <section class="view active" id="home">
+  <div class="hero"><div><div class="eyebrow">YOUR MUSIC, YOUR SPACE</div><h1>音乐，让今天<br>更有节奏。</h1><p>搜索 Spotify 音乐，保存你喜欢的歌曲，整理自己的播放列表。</p></div><div class="heroArt">♫</div></div>
+  <div class="sectionHead"><h2>快速入口</h2></div>
+  <div class="quickGrid">
+   <div class="quick" data-jump="libraryView"><div class="cover">♥</div><b>我喜欢的音乐</b></div>
+   <div class="quick" id="quickAdd"><div class="cover">＋</div><b>添加歌曲链接</b></div>
+   <div class="quick" id="quickRecent"><div class="cover">◷</div><b>最近播放</b></div>
+  </div>
+  <div class="sectionHead"><h2>最近播放</h2><button data-jump="libraryView">查看音乐库</button></div>
+  <div class="cards" id="recentCards"></div>
+  <div class="sectionHead"><h2>你的收藏</h2></div>
+  <div class="cards" id="likedCards"></div>
+ </section>
+  <section class="view" id="libraryView">
+  <h1 class="viewTitle">你的音乐库</h1><p class="sub">歌曲和歌单保存在当前浏览器设备中。</p>
+  <div class="actionRow"><button class="action primary" id="newPlaylist2">＋ 新建歌单</button><button class="action" id="showLiked">♥ 我喜欢的音乐</button><button class="action" id="showRecent">◷ 最近播放</button></div>
+  <div class="sectionHead"><h2 id="libraryHeading">所有收藏</h2><button id="sortLibrary">最近添加</button></div>
+  <div class="trackList" id="libraryTracks"></div>
+ </section>
+ <section class="view" id="playlistView">
+  <h1 class="viewTitle" id="playlistHeading">播放列表</h1><p class="sub" id="playlistSub">你的个人歌单</p>
+  <div class="actionRow"><button class="action primary" id="playPlaylist">▶ 播放列表</button><button class="action" id="renamePlaylist">重命名</button><button class="action" id="deletePlaylist">删除歌单</button></div>
+  <div class="trackList" id="playlistTracks"></div>
+ </section>
+ <section class="view" id="addView">
+  <h1 class="viewTitle">添加音乐</h1><p class="sub">粘贴 Spotify 分享链接，将歌曲加入你的音乐库。</p>
+  <div class="inputRow"><input id="directLink" placeholder="https://open.spotify.com/track/..."><button class="action primary" id="directAdd">添加到音乐库</button></div>
+  <div class="hint">支持 track、album、playlist、episode 和 show 类型链接。歌曲信息由你添加的链接标识；本页面不会伪造 Spotify 曲目信息。</div>
+ </section>
+</main>
+</div>
+<div class="player" id="playerBar">
+ <div class="playerTop">
+  <div class="now"><div class="cover" id="nowCover">♫</div><div class="nowText"><b id="nowTitle">尚未选择歌曲</b><small id="nowArtist">添加 Spotify 链接开始播放</small></div><button id="likeCurrent" title="收藏" style="background:transparent;color:#c7d4cb;font-size:19px">♡</button></div>
+  <div class="playerControls"><div class="controls"><button id="shuffleBtn" title="随机播放">⤨</button><button id="prevBtn" title="上一首">|‹</button><button class="play" id="playBtn" title="显示播放器">▶</button><button id="nextBtn" title="下一首">›|</button><button id="repeatBtn" title="循环">↻</button></div><div class="progress"><span>Spotify</span><div class="bar"><i></i></div><span>Embed</span></div></div>
+  <div class="playerRight"><button id="queueBtn" title="播放队列">☷</button><button id="expandPlayer" title="展开播放器">⌃</button></div>
+ </div>
+ <div class="embedWrap" id="embedWrap"><div id="embedHost"></div><div class="hint">播放器载入后，请点击 Spotify 播放器内部的 ▶ 按钮开始播放。页面会尝试在歌曲结束后切换到最近播放列表中的下一首；若浏览器不支持播放事件，可使用下一首按钮。</div></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const KEY='music_space_library_v2',RECENT='music_space_recent_v2',PLAYLISTS='music_space_playlists_v2',CURRENT='music_space_current_v2',DOCK='music_space_embed_open_v2';
+let library=[],recent=[],playlists=[],current=null,currentPlaylist=null,queue=[],queueIndex=0,shuffle=false,repeat=false;
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d}catch{return d}};
+const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display='none',2300)}
+function parse(raw){let u;try{u=new URL(raw.trim())}catch{throw Error('请粘贴有效的 Spotify 分享链接。')}if(!['open.spotify.com','spotify.link'].includes(u.hostname))throw Error('请使用 Spotify 官方分享链接。');const p=u.pathname.split('/').filter(Boolean),types=['track','album','playlist','episode','show'],i=p.findIndex(x=>types.includes(x));if(i<0||!p[i+1])throw Error('暂不支持此链接类型。');return{type:p[i],id:p[i+1].split('?')[0],url:'https://open.spotify.com/'+p[i]+'/'+p[i+1].split('?')[0],key:p[i]+':'+p[i+1].split('?')[0]}}
+function label(item){return item.name||item.type+' · '+item.id.slice(0,8)}
+function save(){write(KEY,library);write(RECENT,recent);write(PLAYLISTS,playlists);write(CURRENT,current)}
+function switchView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='libraryView')renderLibrary();if(id==='home')renderHome();window.scrollTo({top:0,behavior:'smooth'})}
+function itemCard(item){const d=document.createElement('div');d.className='musicCard';d.innerHTML='<div class="art">♫</div><b></b><small></small>';d.querySelector('b').textContent=label(item);d.querySelector('small').textContent=item.type+' · Spotify';d.onclick=()=>play(item);return d}
+function renderHome(){const rc=$('recentCards'),lc=$('likedCards');rc.replaceChildren();lc.replaceChildren();recent.slice(0,6).forEach(x=>rc.append(itemCard(x)));library.slice(0,6).forEach(x=>lc.append(itemCard(x)));if(!recent.length)rc.innerHTML='<div class="empty">还没有播放记录。添加 Spotify 链接开始使用。</div>';if(!library.length)lc.innerHTML='<div class="empty">收藏的音乐会显示在这里。</div>';renderSidebar()}
+function renderSidebar(){const host=$('sideLibrary');host.replaceChildren();const liked=document.createElement('button');liked.className='libItem';liked.innerHTML='<span class="cover">♥</span><span class="libMeta"><b>我喜欢的音乐</b><small>'+library.length+' 项</small></span>';liked.onclick=()=>{switchView('libraryView');$('libraryHeading').textContent='我喜欢的音乐'};host.append(liked);playlists.forEach(p=>{const b=document.createElement('button');b.className='libItem';b.innerHTML='<span class="cover">♫</span><span class="libMeta"><b></b><small>'+p.items.length+' 首歌曲</small></span>';b.querySelector('b').textContent=p.name;b.onclick=()=>openPlaylist(p.id);host.append(b)})}
+function trackRow(item,i,source){const row=document.createElement('div');row.className='track';const num=document.createElement('div');num.className='trackNum';num.textContent=String(i+1);const title=document.createElement('div');title.className='trackTitle';const b=document.createElement('b');b.textContent=label(item);const sm=document.createElement('small');sm.textContent=item.type+' · Spotify';title.append(b,sm);const acts=document.createElement('div');acts.className='trackActions';const playBtn=document.createElement('button');playBtn.textContent='▶';playBtn.title='播放';playBtn.onclick=()=>play(item,source==='playlist'?currentPlaylist:null);const like=document.createElement('button');like.textContent=library.some(x=>x.key===item.key)?'♥':'♡';like.title='收藏/取消收藏';like.onclick=()=>toggleLike(item);acts.append(playBtn,like);row.append(num,title,acts);return row}
+function renderLibrary(){const host=$('libraryTracks');host.replaceChildren();const data=library.slice();data.forEach((x,i)=>host.append(trackRow(x,i,'library')));if(!data.length)host.innerHTML='<div class="empty">音乐库还是空的。点击“添加歌曲链接”保存第一首歌曲。</div>';renderSidebar()}
+function openPlaylist(id){const p=playlists.find(x=>x.id===id);if(!p)return;currentPlaylist=id;$('playlistHeading').textContent=p.name;$('playlistSub').textContent=p.items.length+' 首歌曲 · 你的个人歌单';const host=$('playlistTracks');host.replaceChildren();p.items.forEach((x,i)=>host.append(trackRow(x,i,'playlist')));if(!p.items.length)host.innerHTML='<div class="empty">歌单为空。先在音乐库收藏歌曲，再将它们添加到歌单。</div>';switchView('playlistView')}
+function add(raw){const item=parse(raw);if(!library.some(x=>x.key===item.key))library.unshift(item);play(item);save();renderHome();renderLibrary();toast('已添加到音乐库');}
+function directEmbed(host,item){
+ host.replaceChildren();
+ const frame=document.createElement('iframe');
+ frame.title='Spotify 官方音乐播放器';
+ frame.src='https://open.spotify.com/embed/'+item.type+'/'+encodeURIComponent(item.id)+'?utm_source=generator&theme=0&autoplay=1';
+ frame.width='100%';
+ frame.height=(item.type==='track'||item.type==='episode')?'152':'352';
+ frame.allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+ frame.setAttribute('allowfullscreen','');
+ frame.setAttribute('frameborder','0');
+ frame.loading='eager';
+ frame.referrerPolicy='strict-origin-when-cross-origin';
+ host.append(frame);
+}
+function mount(item){
+ const host=$('embedHost');
+ $('embedWrap').classList.add('open');
+ write(DOCK,true);
+ directEmbed(host,item);
+}
+function play(item,playlistId,preserveQueue=false){
+ current=item;
+ write(CURRENT,item);
+ $('nowTitle').textContent=label(item);
+ $('nowArtist').textContent='Spotify 官方嵌入播放器';
+ $('nowCover').textContent='♫';
+ recent=[item,...recent.filter(x=>x.key!==item.key)].slice(0,30);
+ if(!preserveQueue){
+  if(playlistId){
+   const p=playlists.find(x=>x.id===playlistId);
+   queue=p?p.items.slice():[];
+   queueIndex=queue.findIndex(x=>x.key===item.key);
+  }else{
+   queue=recent.slice();
+   queueIndex=queue.findIndex(x=>x.key===item.key);
+   if(queueIndex<0)queueIndex=0;
+  }
+ }
+ save();
+ mount(item);
+ renderHome();
+ toast('已切换歌曲；若未开始播放，请点击 Spotify 播放器内的播放键');
+}
+function toggleLike(item){const i=library.findIndex(x=>x.key===item.key);if(i>=0)library.splice(i,1);else library.unshift(item);save();renderHome();renderLibrary();if(current&&current.key===item.key)$('likeCurrent').textContent=library.some(x=>x.key===item.key)?'♥':'♡'}
+function createPlaylist(){const name=prompt('请输入歌单名称');if(!name||!name.trim())return;const p={id:Date.now().toString(36),name:name.trim(),items:[]};playlists.unshift(p);save();renderSidebar();openPlaylist(p.id)}
+function addCurrentToPlaylist(){if(!current){toast('请先载入一首歌曲');return}if(!playlists.length){createPlaylist();return}const names=playlists.map((p,i)=>(i+1)+'. '+p.name).join('\n');const n=Number(prompt('输入要添加到的歌单编号：\n'+names));const p=playlists[n-1];if(!p)return;if(!p.items.some(x=>x.key===current.key))p.items.push(current);save();renderSidebar();toast('已添加到歌单：'+p.name)}
+function playNext(automatic=false){if(!queue.length){toast('最近播放队列为空');return}if(shuffle&&queue.length>1)queueIndex=Math.floor(Math.random()*queue.length);else if(queueIndex<queue.length-1)queueIndex++;else if(repeat)queueIndex=0;else{if(automatic)toast('最近播放列表没有下一首');else toast('已到最近播放列表末尾');return}play(queue[queueIndex],currentPlaylist,true)}
+function playPrev(){if(queueIndex>0){queueIndex--;play(queue[queueIndex],currentPlaylist,true)}else toast('已经是队列第一首')}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>switchView(b.dataset.jump));
+$('quickAdd').onclick=()=>switchView('addView');$('quickRecent').onclick=()=>{switchView('libraryView');$('libraryHeading').textContent='最近播放';const h=$('libraryTracks');h.replaceChildren();recent.forEach((x,i)=>h.append(trackRow(x,i,'recent')))};
+$('newPlaylist').onclick=createPlaylist;$('newPlaylist2').onclick=createPlaylist;
+
+$('directAdd').onclick=()=>{try{add($('directLink').value);$('directLink').value='';switchView('home')}catch(e){toast(e.message)}};
+$('pasteLink').onclick=()=>switchView('addView');$('openSpotify').onclick=()=>window.open('https://accounts.spotify.com/login?continue='+encodeURIComponent('https://open.spotify.com/'),'_blank','noopener,noreferrer');
+$('playBtn').onclick=()=>{if(current){$('embedWrap').classList.toggle('open');write(DOCK,$('embedWrap').classList.contains('open'))}else switchView('addView')};
+$('expandPlayer').onclick=()=>{$('embedWrap').classList.toggle('open');write(DOCK,$('embedWrap').classList.contains('open'))};
+$('nextBtn').onclick=playNext;$('prevBtn').onclick=playPrev;
+$('shuffleBtn').onclick=()=>{shuffle=!shuffle;$('shuffleBtn').style.color=shuffle?'#1ed760':'#b7c2ba';toast(shuffle?'随机播放已开启':'随机播放已关闭')};
+$('repeatBtn').onclick=()=>{repeat=!repeat;$('repeatBtn').style.color=repeat?'#1ed760':'#b7c2ba';toast(repeat?'循环播放已开启':'循环播放已关闭')};
+$('likeCurrent').onclick=()=>{if(current)toggleLike(current)};
+$('queueBtn').onclick=addCurrentToPlaylist;
+$('showLiked').onclick=()=>{switchView('libraryView');$('libraryHeading').textContent='我喜欢的音乐'};
+$('showRecent').onclick=()=>{$('quickRecent').click()};
+$('sortLibrary').onclick=()=>{library.reverse();save();renderLibrary();toast('已切换排序顺序')};
+$('playPlaylist').onclick=()=>{const p=playlists.find(x=>x.id===currentPlaylist);if(p&&p.items.length){queue=p.items.slice();queueIndex=0;play(queue[0],p.id)}else toast('这个歌单还没有歌曲')};
+$('renamePlaylist').onclick=()=>{const p=playlists.find(x=>x.id===currentPlaylist);if(!p)return;const n=prompt('新的歌单名称',p.name);if(n&&n.trim()){p.name=n.trim();save();renderSidebar();openPlaylist(p.id)}};
+$('deletePlaylist').onclick=()=>{const p=playlists.find(x=>x.id===currentPlaylist);if(!p||!confirm('确定删除歌单“'+p.name+'”？'))return;playlists=playlists.filter(x=>x.id!==p.id);currentPlaylist=null;save();renderSidebar();switchView('libraryView')};
+$('backBtn').onclick=()=>switchView('home');$('forwardBtn').onclick=()=>switchView('libraryView');
+$('embedWrap').classList.toggle('open',read(DOCK,false)===true);
+library=read(KEY,[]);recent=read(RECENT,[]);playlists=read(PLAYLISTS,[]);current=read(CURRENT,null);
+if(current){$('nowTitle').textContent=label(current);$('nowArtist').textContent='上次选择的歌曲';if(read(DOCK,false))mount(current)}
+renderHome();renderLibrary();
+})();
+</script>
+</body></html>
